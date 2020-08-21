@@ -4,7 +4,7 @@
 
 Create a config file:
 
-```
+```elixir
 config :billcom, :api,
   %{
     devKey: "myDevKey",
