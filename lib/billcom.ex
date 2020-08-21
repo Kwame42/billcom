@@ -30,25 +30,23 @@ defmodule Billcom do
   raise error
   """
 
-  @spec login :: conn
-  def login do
+  @spec login! :: conn
+  def login! do
     conn = get_conf()
     |> update_conn_url(:login)
     
     HTTPoison.start()
-    create_body(conn, :no_session)
-    |> execute(conn)
-    |> update_conn(conn, ["sessionId", "usersId"])
+    case create_body(conn, :no_session) |> execute(conn) do
+      {:ok, val} -> update_conn(val, conn, ["sessionId", "usersId"])
+      {:error, val} -> raise "Error: cannot login: #{to_string(val)}"
+    end
   end
 
   @spec logout(conn) :: :ok
   def logout(connection) do
     conn = update_conn_url(connection, :logout)
     
-    create_body(conn)
-    |> execute(conn)
-
-    :ok
+    create_body(conn) |> execute(conn)
   end
 
   @doc """
@@ -184,8 +182,8 @@ defmodule Billcom do
   
   defp check_answer(answer) do
     cond do
-      Map.fetch!(answer, "response_status") == 0 -> answer
-      true -> raise "Error"
+      Map.fetch!(answer, "response_status") == 0 -> {:ok, answer}
+      Map.fetch!(answer, "response_status") != 0 -> {:error, answer}
     end
   end
   

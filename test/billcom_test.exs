@@ -19,11 +19,40 @@ defmodule BillcomTest do
     conn = Billcom.set_user_name(conn, "#{val} this is different")
     assert Billcom.get_user_name(conn) == "#{val} this is different"
   end
-  
-  test "Logout" do
+
+  test "login / Create / read / update / delete / undelete a customer / logout" do
+    customer = %{obj:
+		 %{
+		   entity: "Customer",
+		   isActive: "1",
+		   name: "This is the customer name",
+		   shortName: "Testing Customer",
+		   parentCustomerId: "",
+		   companyName: "Diamond Industrial Inc.",
+		   contactFirstName: "Kwame",
+		   contactLastName: "Yamgnane",
+		   accNumber: "212",
+		   billAddress1: "123 South North Street"
+		 }
+		}
     conn = Billcom.login()
-    assert Billcom.logout(conn) == :ok
+    result = Billcom.Customer.create(conn, customer)
+    assert result == {:ok, _}
+    result = Billcom.Customer.read(conn, customer)
+    assert Map.fetch!(result, "response_data") |> Map.has_key?("id")
+    id = Map.fetch!(result, "response_data") |> Map.fetch!("id")
+    Map.put(customer.obj, shortName: "mouai")
+    Map.put(customer.obj, id: id)
+    result = Billcom.Customer.update(conn, customer)
+    
+    assert result == {:ok, _}
+    
+    
   end
 
   
+  test "Logout" do
+    conn = Billcom.login()
+    assert Billcom.logout(conn) == {:ok, _}
+  end
 end
