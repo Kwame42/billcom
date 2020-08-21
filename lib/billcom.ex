@@ -34,6 +34,7 @@ defmodule Billcom do
   def login do
     conn = get_conf()
     |> update_conn_url(:login)
+    
     HTTPoison.start()
     create_body(conn, :no_session)
     |> execute(conn)
@@ -43,6 +44,7 @@ defmodule Billcom do
   @spec logout(conn) :: :ok
   def logout(connection) do
     conn = update_conn_url(connection, :logout)
+    
     create_body(conn)
     |> execute(conn)
 
@@ -60,13 +62,35 @@ defmodule Billcom do
   """
   def list_orgs(connection) do
     conn = update_conn_url(connection, :list_orgs)
+    
     create_body(conn)
     |> execute(conn)
     |> Map.fetch!("response_data")
   end
 
-  def get_list(conn) do
-    conn
+
+  @crud_list [Billcom.Customer, Billcom.CustomerContact]
+  @action_list ["create", "read", "update", "delete", "undelete"]
+ 
+  for crud <- @crud_list do
+    def_list = for action <- @action_list do
+      quote do
+	def unquote(:"#{action}")(connection, data) do
+	  json_file = String.slice("#{unquote(crud)}", String.length("Elixir.") + String.length("Billcom."), String.length("#{unquote(crud)}")) <> ".json"
+	  conn = Billcom.update_map(connection, :conn_url, connection.api_url <> "/" <> String.capitalize(unquote(action)) <> "/" <> json_file)
+
+	  Billcom.create_body(conn, data)
+	  |> Billcom.execute(conn)
+	  |> Map.fetch!("response_data")
+	end
+      end
+    end
+    
+    Module.create(crud, def_list, Macro.Env.location(__ENV__))
+  end
+  
+  def get_list() do
+    "HAHAH"
   end
 
   def create(conn) do
@@ -188,7 +212,7 @@ defmodule Billcom do
     end
   end
   
-  defp execute(body, conn) do
+  def execute(body, conn) do
     result = HTTPoison.post(conn.conn_url, URI.encode_query(body), %{"Content-Type" => "application/x-www-form-urlencoded"})
     answer = case result do
       {:ok, answer} -> answer
@@ -200,7 +224,7 @@ defmodule Billcom do
     |> check_answer()      
   end
 
-  defp create_body(conn, :no_session) do
+  def create_body(conn, :no_session) do
     %{
       devKey: conn.dev_key,
       orgId: conn.org_id,
@@ -208,15 +232,16 @@ defmodule Billcom do
       userName: conn.user_name
     }
   end
+
+  def create_body(conn, data) do
+    create_body(conn)
+    |> Map.put_new(:data, Poison.encode!(data))
+  end
+
   
-  defp create_body(conn) do
-    %{
-      devKey: conn.dev_key,
-      orgId: conn.org_id,
-      password: conn.password,
-      userName: conn.user_name,
-      sessionId: conn.session_id
-    }
+  def create_body(conn) do
+    create_body(conn, :no_session)
+    |> Map.put_new(:sessionId, conn.session_id)
   end
 
   defp key_to_atom(key) do
@@ -240,7 +265,7 @@ defmodule Billcom do
     Map.update(conn, key_to_atom(val), Map.fetch(data, val), fn _ -> Map.fetch(data, val) end)
   end
 
-  defp update_map(map, key, val) do
+  def update_map(map, key, val) do
     Map.update(map, key, val, fn _ -> val end)
   end
 end
