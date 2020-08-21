@@ -67,27 +67,6 @@ defmodule Billcom do
     |> execute(conn)
     |> Map.fetch!("response_data")
   end
-
-
-  @crud_list [Billcom.Customer, Billcom.CustomerContact]
-  @action_list ["create", "read", "update", "delete", "undelete"]
- 
-  for crud <- @crud_list do
-    def_list = for action <- @action_list do
-      quote do
-	def unquote(:"#{action}")(connection, data) do
-	  json_file = String.slice("#{unquote(crud)}", String.length("Elixir.") + String.length("Billcom."), String.length("#{unquote(crud)}")) <> ".json"
-	  conn = Billcom.update_map(connection, :conn_url, connection.api_url <> "/" <> String.capitalize(unquote(action)) <> "/" <> json_file)
-
-	  Billcom.create_body(conn, data)
-	  |> Billcom.execute(conn)
-	  |> Map.fetch!("response_data")
-	end
-      end
-    end
-    
-    Module.create(crud, def_list, Macro.Env.location(__ENV__))
-  end
   
   def get_list() do
     "HAHAH"
@@ -121,46 +100,6 @@ defmodule Billcom do
     conn
   end
 
-  def get_session_id(conn) do
-    conn
-  end
-
-  def set_session_id(conn) do
-    conn
-  end
-
-  def get_org_id(conn) do
-    conn
-  end
-
-  def set_org_id(conn) do
-    conn
-  end
-
-  def get_dev_key(conn) do
-    conn
-  end
-
-  def set_dev_key(conn) do
-    conn
-  end
-
-  def get_login(conn) do
-    conn
-  end
-
-  def set_login(conn) do
-    conn
-  end
-
-  def get_password(conn) do
-    conn
-  end
-
-  def set_password(conn) do
-    conn
-  end
-
   @type conn :: %{
     dev_key: String.t,
     org_id: String.t,
@@ -174,7 +113,45 @@ defmodule Billcom do
   defmodule Conn do
     defstruct dev_key: "", org_id: "", password: "", user_name: "", session_id: "", api_url: ""
   end
+  
+  is_struct? = fn atom -> atom == :__struct__ end
+  
+  for field <- Conn.__struct__() |> Map.keys(), not is_struct?.(field) do
+    field_str = Atom.to_string(field)
+    @doc """
+    get_#{field_str} get object value #{field_str}
+    
+    ## Parameters: 
+    
+    conn - actual connexion structure
+    
+    ## return:
+    #{field_str} value
+    """
+    @spec unquote(:"get_#{field_str}")(conn) :: String.t
+    
+    def unquote(:"get_#{field_str}")(conn) do
+      Map.fetch!(conn, unquote(field))
+    end
 
+    @doc """
+    set_#{field_str} set object "#{field_str}" value
+    
+    ## Parameters: 
+    
+    conn - actual connexion structure
+    val - value of the object
+    
+    ## return:
+    new conn strucutre with #{field_str} set to val
+    """
+    @spec unquote(:"set_#{field_str}")(conn, String.t) :: String.t
+    
+    def unquote(:"set_#{field_str}")(conn, val) do
+      Map.put(conn, unquote(field), val)
+    end
+  end
+  
   defp get_conf do
     configuration = Application.fetch_env!(:billcom, :api)
     api_url = cond do
@@ -190,7 +167,7 @@ defmodule Billcom do
       api_url: api_url
     }
   end
-
+  
   @json_url [
     {:login, "Login.json"},
     {:logout, "Logout.json"},
@@ -204,7 +181,7 @@ defmodule Billcom do
   for {token, json} <- @json_url do
     defp update_conn_url(conn, unquote(token)), do: update_map(conn, :conn_url, conn.api_url <> "/" <> unquote(json))
   end
-
+  
   defp check_answer(answer) do
     cond do
       Map.fetch!(answer, "response_status") == 0 -> answer
@@ -214,11 +191,10 @@ defmodule Billcom do
   
   def execute(body, conn) do
     result = HTTPoison.post(conn.conn_url, URI.encode_query(body), %{"Content-Type" => "application/x-www-form-urlencoded"})
-    answer = case result do
+    case result do
       {:ok, answer} -> answer
       _ -> raise "Cannot execute request"
     end
-    answer
     |> Map.fetch!(:body)
     |> Poison.decode!()
     |> check_answer()      
