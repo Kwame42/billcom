@@ -12,7 +12,10 @@ defmodule Billcom do
     userName: "myUsername"
   }
 
-  Then use conn = Billcom.login
+  Then use
+
+  ...
+  conn = Billcom.login
   Billcom.list_orgs(conn)
   ...
   """
@@ -26,10 +29,9 @@ defmodule Billcom do
 
   ## return:
 
-  :ok - success
-  raise error
+  success - {:ok, conn} where conn is an updated version of the conn passed in parameters with sessionId and usersId
+  failure - raise error
   """
-
   @spec login! :: conn
   def login! do
     conn = get_conf()
@@ -42,7 +44,18 @@ defmodule Billcom do
     end
   end
 
-  @spec logout(conn) :: :ok
+  @doc """
+  logout from Bill.com api
+
+  ## Parameters: 
+
+  conn - see login
+
+  ## return:
+  success - {:ok, val} where data are logout data
+  failure - {:error, val} where date are failure reasons
+  """
+  @spec logout(conn) :: {atom(), map()}
   def logout(connection) do
     conn = update_conn_url(connection, :logout)
     
@@ -50,14 +63,17 @@ defmodule Billcom do
   end
 
   @doc """
-  Retrun the list of organisztion associated with your account
+  Return the list of organisation associated with your account
 
   ## Parameters: 
 
   conn - see login
 
   ## return:
+  success - {:ok, val} from where you can fetch organisation list (example: val |> Map.fetch!("response_data"))
+  failure - {:error, val} where date are failure reasons
   """
+  @spec list_orgs(conn()) :: {atom(), map()}
   def list_orgs(connection) do
     conn = update_conn_url(connection, :list_orgs)
     
@@ -65,16 +81,119 @@ defmodule Billcom do
     |> execute(conn)
   end
 
+  @doc """
+  Check for the presence of a key in the result collections
+
+  ## Parameters: 
+
+  result - result of a api call
+  key - the key you are looking for
+
+  ## return:
+  success - true
+  failure - false
+
+  """
+  @spec has_key?(map(), String.t) :: atom()
   def has_key?(result, key) do
     result |> elem(1) |> Map.fetch!("response_data") |> Map.has_key?(key)
   end
     
+  @doc """
+  Return the value of a key in the result collections 
+
+  ## Parameters: 
+
+  result - result collection of a api call
+  key - the key from which to return a value
+
+  ## return:
+  success - value
+  failure - unkown behavior see has_key?
+
+  """
+  @spec get_val(map(), String.t) :: atom()
   def get_val(result, key) do
     result |> elem(1) |> Map.fetch!("response_data") |> Map.fetch!(key)
-  end 
+  end
+
+
+  @api_function_list_data [
+    "RecordAPPayment",
+    "VoidAPPayment",
+    "CancelAPPayment",
+    "GetAPSummary",
+    "GetDisbursementData",
+    "ListPayments",
+    "GetCheckImageData",
+    "SetApprovers",
+    "ListApprovers",
+    "ListUserApprovals",
+    "Approve",
+    "Deny",
+    "ClearApprovers",
+    "SendInvoice",
+    "MailInvoice",
+    "ChargeCustomer",
+    "RecordARPayment",
+    "GetARSummary",
+    "SetCustomerAuthorization",
+    "GetProfilePermissions",
+    "GetBankBalance",
+    "SetBankBalance",
+    "UploadAttachment",
+    "SendMessage",
+    "GetDocumentPages",
+    "ListMessage",
+    "NetworkSearch",
+    "SendVendorInvite",
+    "SendInvite",
+    "LargeBillerSearch",
+    "GetLargeBillerPaymentAddress",
+    "ConnectLargeBillerAsVendor",
+    "GetNetworkStatus",
+    "CancelInvite",
+    "DisconnectVendorFromNetwork",
+    "DisconnectCustomerFromNetwork",
+# "GetSessionInfo"
+    "MFAChallenge",
+    "MFAAuthenticate",
+    "MFAStatus",
+    "GetObjectUrl",
+#/List/<Object Name>.json    "",
+    "SearchEntity",
+#CurrentTime    "",
+#ListOrgs    "",
+#/Bulk/Crud/OPERATION/ENTITY    "",
+    "GetEntityMetadata"
+  ]
+
+  for function <- @api_function_list_data do
+    function_name =
+      function
+      |> String.replace(~r/([A-Z][a-z]+)/, "_\\1")
+      |> String.downcase()
+      |> String.slice(1..-1)
+    
+    @doc """
+    #{function} for bill.com api
+    ## Parameters: 
+    conn - a connection structure (see Billcom.login/0)
+    data - data object to send for the object
+    ## return:
+    success - {:ok, val}
+    fail - {:error, val}
+    """	
+    @spec unquote(:"#{function_name}")(map(), map()) :: any 
+    def unquote(:"#{function_name}")(connection, data) do
+      conn = Billcom.update_map(connection, :conn_url, connection.api_url <> "#{unquote(function)}.json")
+      Billcom.create_body(conn, data)
+      |> Billcom.execute(conn)
+    end
+  end
   
-  def get_list() do
-    "HAHAH"
+  def get_list(conn) do
+    conn
   end
 
   def create(conn) do

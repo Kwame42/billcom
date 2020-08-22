@@ -1,4 +1,6 @@
 crud_list = [
+  "Vendor",
+  "VendorBankAccount",
   "Bill",
   "RecurringBill",
   "VendorCredit",
@@ -10,11 +12,36 @@ crud_list = [
   "VendCreditApprover",
   "BillApprover",
   "Invoice",
+  "RecurringInvoice",
+  "CreditMemo",
+  "InvoiceCredit",
+  "ReceivedPay",
+  "RPConvFee",
   "Customer",
-  "CustomerContact"
+  "CustomerContact",
+  "CustomerBankAccount",
+  "User",
+  "Profile",
+  "BankAccount",
+  "MoneyMovement",
+  "ActgClass",
+  "ChartOfAccount",
+  "Department",
+  "Employee",
+  "Item",
+  "Job",
+  "Location",
+  "PaymentTerm",
+  "Organization"
 ]
 
-action_list = ["create", "read", "update", "delete", "undelete"]
+action_list = [
+  "create",
+  "read",
+  "update",
+  "delete",
+  "undelete"
+]
 
 for crud <- crud_list do
     def_list = for action <- action_list do
@@ -25,8 +52,8 @@ for crud <- crud_list do
 	conn - a connection strucure (see Billcom.login/0)
 	data - data object to send for the object
 	## return:
-	success - result of the request
-	fail - raise error
+	success - {:ok, val}
+	fail - {:error, val}
 	"""	
 	@spec unquote(:"#{action}")(map(), map()) :: any 
 	def unquote(:"#{action}")(connection, data) do
