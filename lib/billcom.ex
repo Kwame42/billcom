@@ -63,8 +63,15 @@ defmodule Billcom do
     
     create_body(conn)
     |> execute(conn)
-    |> Map.fetch!("response_data")
   end
+
+  def has_key?(result, key) do
+    result |> elem(1) |> Map.fetch!("response_data") |> Map.has_key?(key)
+  end
+    
+  def get_val(result, key) do
+    result |> elem(1) |> Map.fetch!("response_data") |> Map.fetch!(key)
+  end 
   
   def get_list() do
     "HAHAH"

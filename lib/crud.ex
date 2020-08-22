@@ -1,17 +1,17 @@
-crud_list =  [
-  Billcom.Bill,
-  Billcom.RecurringBill,
-  Billcom.VendorCredit,
-  Billcom.BillCredit,
-  Billcom.SentPay,
-  Billcom.BillPay,
-  Billcom.ApprovalPolicy,
-  Billcom.ApprovalPolicyApprover,
-  Billcom.VendCreditApprover,
-  Billcom.BillApprover,
-  Billcom.Invoice,
-  Billcom.Customer,
-  Billcom.CustomerContact
+crud_list = [
+  "Bill",
+  "RecurringBill",
+  "VendorCredit",
+  "BillCredit",
+  "SentPay",
+  "BillPay",
+  "ApprovalPolicy",
+  "ApprovalPolicyApprover",
+  "VendCreditApprover",
+  "BillApprover",
+  "Invoice",
+  "Customer",
+  "CustomerContact"
 ]
 
 action_list = ["create", "read", "update", "delete", "undelete"]
@@ -30,14 +30,13 @@ for crud <- crud_list do
 	"""	
 	@spec unquote(:"#{action}")(map(), map()) :: any 
 	def unquote(:"#{action}")(connection, data) do
-	  json_file = String.slice("#{unquote(crud)}", String.length("Elixir.") + String.length("Billcom."), String.length("#{unquote(crud)}")) <> ".json"
+	  json_file = unquote(crud) <> ".json"
 	  conn = Billcom.update_map(connection, :conn_url, connection.api_url <> "/Crud/" <> String.capitalize(unquote(action)) <> "/" <> json_file)
-	  
 	  Billcom.create_body(conn, data)
 	  |> Billcom.execute(conn)
 	end
       end
     end
 	
-    Module.create(crud, def_list, Macro.Env.location(__ENV__))
+    Module.create(String.to_atom("Elixir.Billcom.#{crud}"), def_list, Macro.Env.location(__ENV__))
 end

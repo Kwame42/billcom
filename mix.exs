@@ -22,7 +22,8 @@ defmodule Billcom.MixProject do
   defp deps do
     [
       {:httpoison, "~> 1.7"},
-      {:poison, "~> 3.1"}
+      {:poison, "~> 3.1"},
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
     ]
   end
 end
