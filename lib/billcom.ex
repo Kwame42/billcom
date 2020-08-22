@@ -1,3 +1,39 @@
+##
+## Copyright (c) 2020 Kwame Yamgane. All rights reserved.
+##
+## Redistribution and use in source and binary forms, with or
+## without modification, are permitted provided that the following
+## conditions are met:
+##
+## 1. Redistributions of source code must retain the above copyright
+##    notice, this list of conditions and the following disclaimer.
+##
+## 2. Redistributions in binary form must reproduce the above
+##    copyright notice, this list of conditions and the following
+##    disclaimer in the documentation and/or other materials
+##    provided with the distribution.
+##
+## 3. All advertising materials mentioning features or use of this
+##    software must display the following acknowledgement: This
+##    product includes software developed by the organization.
+##
+## 4. Neither the name of the copyright holder nor the names of its
+##    contributors may be used to endorse or promote products derived
+##    from this software without specific prior written permission.
+##
+## THIS SOFTWARE IS PROVIDED BY COPYRIGHT HOLDER "AS IS" AND ANY
+## EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+## THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+## PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL COPYRIGHT
+## HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+## EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+## TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+## OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+## THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+## TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+## OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+## OF SUCH DAMAGE.
+
 defmodule Billcom do
   @moduledoc """
   Simple api library to connect to bill.com api
@@ -21,23 +57,29 @@ defmodule Billcom do
   ...
   """
 
+  @response_data "response_data"
+  @response_status "response_status"
+  @prod_url "https://api.bill.com/api/v2"
+  @sandbox_url "https://api-sandbox.bill.com/api/v2"
+  
   @doc """
   Login to bill.com api
   ## Parameters: 
   none - the module load it's configuration from config file
   ## return:
-  success - {:ok, conn} where conn is an updated version of the conn passed in parameters with sessionId and usersId
-  failure - raise error
+  - success: {:ok, conn} where conn is an updated version of the conn passed in parameters with sessionId and usersId
+  - failure: raise error
   """
   @spec login! :: conn
   def login! do
     conn = get_conf()
     |> update_conn_url(:login)
-    
+
+    IO.inspect(conn)
     HTTPoison.start()
     case create_body(conn, :no_session) |> execute(conn) do
       {:ok, val} -> update_conn(val, conn, ["sessionId", "usersId"])
-      {:error, val} -> raise "Error: cannot login: #{to_string(val)}"
+      {:error, val} -> raise "Cannot login #{Map.fetch!(val, @response_data) |> Map.fetch!("error_message")}"
     end
   end
 
@@ -46,14 +88,14 @@ defmodule Billcom do
   ## Parameters: 
   conn - see login
   ## return:
-  success - {:ok, val} where data are logout data
-  failure - {:error, val} where date are failure reasons
+  - success: {:ok, val} where data are logout data
+  - failure: {:error, val} where date are failure reasons
   """
   @spec logout(conn) :: {atom(), map()}
   def logout(connection) do
     conn = update_conn_url(connection, :logout)
-    
-    create_body(conn) |> execute(conn)
+    create_body(conn)
+    |> execute(conn)
   end
 
   @doc """
@@ -61,13 +103,12 @@ defmodule Billcom do
   ## Parameters: 
   conn - see login
   ## return:
-  success - {:ok, val} from where you can fetch organisation list (example: val |> Map.fetch!("response_data"))
-  failure - {:error, val} where date are failure reasons
+  - success: {:ok, val} from where you can fetch organisation list (example: val |> Map.fetch!("response_data"))
+  - failure: {:error, val} where date are failure reasons
   """
   @spec list_orgs(conn()) :: {atom(), map()}
   def list_orgs(connection) do
     conn = update_conn_url(connection, :list_orgs)
-    
     create_body(conn)
     |> execute(conn)
   end
@@ -78,12 +119,15 @@ defmodule Billcom do
   result - result of a api call
   key - the key you are looking for
   ## return:
-  success - true
-  failure - false
+  - success: true
+  - failure: false
   """
   @spec has_key?(map(), String.t) :: atom()
   def has_key?(result, key) do
-    result |> elem(1) |> Map.fetch!("response_data") |> Map.has_key?(key)
+    result
+    |> elem(1)
+    |> Map.fetch!(@response_data)
+    |> Map.has_key?(key)
   end
     
   @doc """
@@ -92,14 +136,37 @@ defmodule Billcom do
   result - result collection of a api call
   key - the key from which to return a value
   ## return:
-  success - value
-  failure - unkown behavior see has_key?
+  - success: value
+  - failure: unkown behavior see has_key?
   """
   @spec get_val(map(), String.t) :: atom()
   def get_val(result, key) do
-    result |> elem(1) |> Map.fetch!("response_data") |> Map.fetch!(key)
+    result
+    |> elem(1)
+    |> Map.fetch!(@response_data)
+    |> Map.fetch!(key)
   end
 
+  @doc """
+  Return the colection data from the result collection
+  ## Parameters: 
+  result - result collection of a api call
+  ## return:
+  - success: value
+  - failure: unkown behavior
+  """
+  @spec get_val(map(), String.t) :: atom()
+  def get_data(result) when is_tuple(result) do
+    result
+    |> elem(1)
+    |> Map.fetch!(@response_data)
+  end
+  
+  def get_data(result) when is_map(result) do
+    result
+    |> Map.fetch!(@response_data)
+  end
+    
   @api_function_list_data [
     "RecordAPPayment", "VoidAPPayment", "CancelAPPayment", "GetAPSummary",
     "GetDisbursementData", "ListPayments", "GetCheckImageData", "SetApprovers",
@@ -113,21 +180,24 @@ defmodule Billcom do
     "MFAStatus", "GetObjectUrl", "SearchEntity", "GetEntityMetadata",
     "MFAChallenge", "MFAAuthenticate"
   ]
+
+  snail_case = fn str ->
+    str
+    |> String.replace(~r/([A-Z][a-z]+)/, "_\\1")
+    |> String.downcase()
+    |> String.slice(1..-1)
+  end
+  
   for function <- @api_function_list_data do
-    function_name =
-      function
-      |> String.replace(~r/([A-Z][a-z]+)/, "_\\1")
-      |> String.downcase()
-      |> String.slice(1..-1)
-    
+    function_name = snail_case.(function)
     @doc """
     #{function} for bill.com api
     ## Parameters: 
     conn - a connection structure (see Billcom.login/0)
     data - data object to send for the object
     ## return:
-    success - {:ok, val}
-    fail - {:error, val}
+    - success: {:ok, val}
+    - fail: {:error, val}
     """	
     @spec unquote(:"#{function_name}")(map(), map()) :: any 
     def unquote(:"#{function_name}")(connection, data) do
@@ -179,8 +249,7 @@ defmodule Billcom do
   end
 
   def execute(body, conn) do
-    result = HTTPoison.post(conn.conn_url, URI.encode_query(body), %{"Content-Type" => "application/x-www-form-urlencoded"})
-    case result do
+    case HTTPoison.post(conn.conn_url, URI.encode_query(body), %{"Content-Type" => "application/x-www-form-urlencoded"}) do
       {:ok, answer} -> answer
       _ -> raise "Cannot execute request"
     end
@@ -215,8 +284,8 @@ defmodule Billcom do
   defp get_conf do
     configuration = Application.fetch_env!(:billcom, :api)
     api_url = cond do
-      Map.has_key?(configuration, :prod) == true -> "https://api.bill.com/api/v2/"
-      true -> "https://api-sandbox.bill.com/api/v2"
+      Map.has_key?(configuration, :prod) == true -> @prod_url
+      true -> @sandbox_url
     end
     
     %Conn{
@@ -244,8 +313,8 @@ defmodule Billcom do
   
   defp check_answer(answer) do
     cond do
-      Map.fetch!(answer, "response_status") == 0 -> {:ok, answer}
-      Map.fetch!(answer, "response_status") != 0 -> {:error, answer}
+      Map.fetch!(answer, @response_status) == 0 -> {:ok, answer}
+      Map.fetch!(answer, @response_status) != 0 -> {:error, answer}
     end
   end
   
@@ -261,7 +330,7 @@ defmodule Billcom do
   end
   
   defp update_conn(data, conn, [val | last]) do
-    value = Map.fetch!(data, "response_data") |> Map.fetch!(val)
+    value = Map.fetch!(data, @response_data) |> Map.fetch!(val)
     new_conn = update_map(conn, key_to_atom(val), value)
     update_conn(data, new_conn, last)
   end
