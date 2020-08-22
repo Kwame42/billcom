@@ -1,47 +1,16 @@
 crud_list = [
-  "Vendor",
-  "VendorBankAccount",
-  "Bill",
-  "RecurringBill",
-  "VendorCredit",
-  "BillCredit",
-  "SentPay",
-  "BillPay",
-  "ApprovalPolicy",
-  "ApprovalPolicyApprover",
-  "VendCreditApprover",
-  "BillApprover",
-  "Invoice",
-  "RecurringInvoice",
-  "CreditMemo",
-  "InvoiceCredit",
-  "ReceivedPay",
-  "RPConvFee",
-  "Customer",
-  "CustomerContact",
-  "CustomerBankAccount",
-  "User",
-  "Profile",
-  "BankAccount",
-  "MoneyMovement",
-  "ActgClass",
-  "ChartOfAccount",
-  "Department",
-  "Employee",
-  "Item",
-  "Job",
-  "Location",
-  "PaymentTerm",
-  "Organization"
+  "Vendor", "VendorBankAccount", "Bill", "RecurringBill",
+  "VendorCredit", "BillCredit", "SentPay", "BillPay",
+  "ApprovalPolicy", "ApprovalPolicyApprover", "VendCreditApprover", "BillApprover",
+  "Invoice", "RecurringInvoice", "CreditMemo", "InvoiceCredit",
+  "ReceivedPay", "RPConvFee", "Customer", "CustomerContact",
+  "CustomerBankAccount", "User", "Profile", "BankAccount",
+  "MoneyMovement", "ActgClass", "ChartOfAccount", "Department",
+  "Employee", "Item", "Job", "Location",
+  "PaymentTerm", "Organization"
 ]
 
-action_list = [
-  "create",
-  "read",
-  "update",
-  "delete",
-  "undelete"
-]
+action_list = ["create", "read", "update", "delete", "undelete"]
 
 for crud <- crud_list do
     def_list = for action <- action_list do

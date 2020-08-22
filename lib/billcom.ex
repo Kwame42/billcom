@@ -9,7 +9,8 @@ defmodule Billcom do
     devKey: "myDevKey",
     orgId: "myOrgId",
     password: "myPassword",
-    userName: "myUsername"
+    userName: "myUsername",
+    prod: true #optional: to request of bill.com production servers
   }
 
   Then use
@@ -22,13 +23,9 @@ defmodule Billcom do
 
   @doc """
   Login to bill.com api
-
   ## Parameters: 
-
   none - the module load it's configuration from config file
-
   ## return:
-
   success - {:ok, conn} where conn is an updated version of the conn passed in parameters with sessionId and usersId
   failure - raise error
   """
@@ -46,11 +43,8 @@ defmodule Billcom do
 
   @doc """
   logout from Bill.com api
-
   ## Parameters: 
-
   conn - see login
-
   ## return:
   success - {:ok, val} where data are logout data
   failure - {:error, val} where date are failure reasons
@@ -64,11 +58,8 @@ defmodule Billcom do
 
   @doc """
   Return the list of organisation associated with your account
-
   ## Parameters: 
-
   conn - see login
-
   ## return:
   success - {:ok, val} from where you can fetch organisation list (example: val |> Map.fetch!("response_data"))
   failure - {:error, val} where date are failure reasons
@@ -83,16 +74,12 @@ defmodule Billcom do
 
   @doc """
   Check for the presence of a key in the result collections
-
   ## Parameters: 
-
   result - result of a api call
   key - the key you are looking for
-
   ## return:
   success - true
   failure - false
-
   """
   @spec has_key?(map(), String.t) :: atom()
   def has_key?(result, key) do
@@ -101,73 +88,31 @@ defmodule Billcom do
     
   @doc """
   Return the value of a key in the result collections 
-
   ## Parameters: 
-
   result - result collection of a api call
   key - the key from which to return a value
-
   ## return:
   success - value
   failure - unkown behavior see has_key?
-
   """
   @spec get_val(map(), String.t) :: atom()
   def get_val(result, key) do
     result |> elem(1) |> Map.fetch!("response_data") |> Map.fetch!(key)
   end
 
-
   @api_function_list_data [
-    "RecordAPPayment",
-    "VoidAPPayment",
-    "CancelAPPayment",
-    "GetAPSummary",
-    "GetDisbursementData",
-    "ListPayments",
-    "GetCheckImageData",
-    "SetApprovers",
-    "ListApprovers",
-    "ListUserApprovals",
-    "Approve",
-    "Deny",
-    "ClearApprovers",
-    "SendInvoice",
-    "MailInvoice",
-    "ChargeCustomer",
-    "RecordARPayment",
-    "GetARSummary",
-    "SetCustomerAuthorization",
-    "GetProfilePermissions",
-    "GetBankBalance",
-    "SetBankBalance",
-    "UploadAttachment",
-    "SendMessage",
-    "GetDocumentPages",
-    "ListMessage",
-    "NetworkSearch",
-    "SendVendorInvite",
-    "SendInvite",
-    "LargeBillerSearch",
-    "GetLargeBillerPaymentAddress",
-    "ConnectLargeBillerAsVendor",
-    "GetNetworkStatus",
-    "CancelInvite",
-    "DisconnectVendorFromNetwork",
-    "DisconnectCustomerFromNetwork",
-# "GetSessionInfo"
-    "MFAChallenge",
-    "MFAAuthenticate",
-    "MFAStatus",
-    "GetObjectUrl",
-#/List/<Object Name>.json    "",
-    "SearchEntity",
-#CurrentTime    "",
-#ListOrgs    "",
-#/Bulk/Crud/OPERATION/ENTITY    "",
-    "GetEntityMetadata"
+    "RecordAPPayment", "VoidAPPayment", "CancelAPPayment", "GetAPSummary",
+    "GetDisbursementData", "ListPayments", "GetCheckImageData", "SetApprovers",
+    "ListApprovers", "ListUserApprovals", "Approve", "Deny",
+    "ClearApprovers", "SendInvoice", "MailInvoice", "ChargeCustomer",
+    "RecordARPayment", "GetARSummary", "SetCustomerAuthorization", "GetProfilePermissions",
+    "GetBankBalance", "SetBankBalance", "UploadAttachment", "SendMessage",
+    "GetDocumentPages", "ListMessage", "NetworkSearch", "SendVendorInvite",
+    "SendInvite", "LargeBillerSearch", "GetLargeBillerPaymentAddress", "ConnectLargeBillerAsVendor",
+    "GetNetworkStatus", "CancelInvite", "DisconnectVendorFromNetwork", "DisconnectCustomerFromNetwork",
+    "MFAStatus", "GetObjectUrl", "SearchEntity", "GetEntityMetadata",
+    "MFAChallenge", "MFAAuthenticate"
   ]
-
   for function <- @api_function_list_data do
     function_name =
       function
@@ -192,45 +137,10 @@ defmodule Billcom do
     end
   end
   
-  def get_list(conn) do
-    conn
-  end
-
-  def create(conn) do
-    conn
-  end
-
-  def read(conn) do
-    conn
-  end
-
-  def update(conn) do
-    conn
-  end
-
-  def approve(conn) do
-    conn
-  end
-
-  def pay_bill(conn) do
-    conn
-  end
-
-  def record_bill_payed (conn) do
-    conn
-  end
-
-  def upload_attachment(conn) do
-    conn
-  end
-
   @type conn :: %{
-    dev_key: String.t,
-    org_id: String.t,
-    password: String.t,
-    user_name: String.t,
-    session_id: String.t,
-    api_url: String.t,
+    dev_key: String.t, org_id: String.t,
+    password: String.t, user_name: String.t,
+    session_id: String.t, api_url: String.t,
     conn_url: String.t
   }
   
@@ -244,38 +154,64 @@ defmodule Billcom do
     field_str = Atom.to_string(field)
     @doc """
     get_#{field_str} get object value #{field_str}
-    
     ## Parameters: 
-    
     conn - actual connexion structure
-    
     ## return:
     #{field_str} value
     """
     @spec unquote(:"get_#{field_str}")(conn) :: String.t
-    
     def unquote(:"get_#{field_str}")(conn) do
       Map.fetch!(conn, unquote(field))
     end
 
     @doc """
     set_#{field_str} set object "#{field_str}" value
-    
     ## Parameters: 
-    
     conn - actual connexion structure
     val - value of the object
-    
     ## return:
     new conn strucutre with #{field_str} set to val
     """
     @spec unquote(:"set_#{field_str}")(conn, String.t) :: String.t
-    
     def unquote(:"set_#{field_str}")(conn, val) do
       Map.put(conn, unquote(field), val)
     end
   end
-  
+
+  def execute(body, conn) do
+    result = HTTPoison.post(conn.conn_url, URI.encode_query(body), %{"Content-Type" => "application/x-www-form-urlencoded"})
+    case result do
+      {:ok, answer} -> answer
+      _ -> raise "Cannot execute request"
+    end
+    |> Map.fetch!(:body)
+    |> Poison.decode!()
+    |> check_answer()      
+  end
+
+  def update_map(map, key, val) do
+    Map.update(map, key, val, fn _ -> val end)
+  end
+
+  def create_body(conn, :no_session) do
+    %{
+      devKey: conn.dev_key,
+      orgId: conn.org_id,
+      password: conn.password,
+      userName: conn.user_name
+    }
+  end
+
+  def create_body(conn, data) do
+    create_body(conn)
+    |> Map.put_new(:data, Poison.encode!(data))
+  end
+
+  def create_body(conn) do
+    create_body(conn, :no_session)
+    |> Map.put_new(:sessionId, conn.session_id)
+  end
+
   defp get_conf do
     configuration = Application.fetch_env!(:billcom, :api)
     api_url = cond do
@@ -313,37 +249,6 @@ defmodule Billcom do
     end
   end
   
-  def execute(body, conn) do
-    result = HTTPoison.post(conn.conn_url, URI.encode_query(body), %{"Content-Type" => "application/x-www-form-urlencoded"})
-    case result do
-      {:ok, answer} -> answer
-      _ -> raise "Cannot execute request"
-    end
-    |> Map.fetch!(:body)
-    |> Poison.decode!()
-    |> check_answer()      
-  end
-
-  def create_body(conn, :no_session) do
-    %{
-      devKey: conn.dev_key,
-      orgId: conn.org_id,
-      password: conn.password,
-      userName: conn.user_name
-    }
-  end
-
-  def create_body(conn, data) do
-    create_body(conn)
-    |> Map.put_new(:data, Poison.encode!(data))
-  end
-
-  
-  def create_body(conn) do
-    create_body(conn, :no_session)
-    |> Map.put_new(:sessionId, conn.session_id)
-  end
-
   defp key_to_atom(key) do
     key
     |> String.replace(~r/([A-Z]\w+)/, "_\\1")
@@ -363,9 +268,5 @@ defmodule Billcom do
 
   defp update_conn(data, conn, val) do
     Map.update(conn, key_to_atom(val), Map.fetch(data, val), fn _ -> Map.fetch(data, val) end)
-  end
-
-  def update_map(map, key, val) do
-    Map.update(map, key, val, fn _ -> val end)
   end
 end

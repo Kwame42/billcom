@@ -1,0 +1,8 @@
+# Last function to implement
+
+  - "/List/<Object Name>.json"
+  - "GetSessionInfo"
+  - "CurrentTime"
+  - "/Bulk/Crud/OPERATION/ENTITY"
+
+# check function parameters (take or not)
