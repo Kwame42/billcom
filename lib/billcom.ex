@@ -75,7 +75,6 @@ defmodule Billcom do
     conn = get_conf()
     |> update_conn_url(:login)
 
-    IO.inspect(conn)
     HTTPoison.start()
     case create_body(conn, :no_session) |> execute(conn) do
       {:ok, val} -> update_conn(val, conn, ["sessionId", "usersId"])
