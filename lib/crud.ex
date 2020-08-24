@@ -52,15 +52,27 @@ for crud <- crud_list do
     def_action = for action <- action_list do
       quote do
 	@doc """
-	#{unquote(crud)}.#{unquote(action)} for bill.com api
+	`Billcom.#{unquote(crud)}.#{unquote(action)}/2` for bill.com api
+
 	## Parameters: 
-	conn - a connection strucure (see Billcom.login/0)
-	data - data object to send for the object
+	- conn: a connection strucure (see `Billcom.login!/0`)
+	- data: data object to send for the object
+
 	## return:
-	success - {:ok, val}
-	fail - {:error, val}
+
+	### success: 
+	```elixir
+	{:ok, data}
+	```
+	Returned `data` from #{unquote(action)} for #{unquote(crud)}
+
+	### failure:
+	```elixir
+	{:error, val}
+	```
+	Where `val` hold information about failure reason.
 	"""	
-	@spec unquote(:"#{action}")(map(), map()) :: any 
+	@spec unquote(:"#{action}")(map(), map()) :: {atom(), map()} 
 	def unquote(:"#{action}")(connection, data) do
 	  json_file = unquote(crud) <> ".json"
 	  conn = Billcom.update_map(connection, :conn_url, connection.api_url <> "/Crud/" <> String.capitalize(unquote(action)) <> "/" <> json_file)
@@ -71,14 +83,27 @@ for crud <- crud_list do
     end
     def_list = quote do
       @doc """
-      #{unquote(crud)}.list for bill.com api
+      `Billcom.#{unquote(crud)}.list/2` for bill.com api
+
       ## Parameters: 
-      conn - a connection strucure (see Billcom.login/0)
-      data - data object to send for the object
+      - conn: a connection strucure (see `Billcom.login!/0`)
+      - data: data object to send for the object
+
       ## return:
-      - success: {:ok, val}
-      - fail: {:error, val}
-      """		 
+
+      ### success:
+      ```elixir
+      {:ok, data}
+      ```
+      Where `data` is a collection of #{unquote(crud)} object list 
+
+      ### failure: 
+      ```elixir
+      {:error, val}
+      ```
+      Where `val` hold information about failure reason.
+      """
+      @spec list(map(), map()) :: {atom(), map()}
       def list(conn, data) do
        	conn = Billcom.update_map(conn, :conn_url, conn.api_url <> "/List/" <> unquote(crud) <> ".json")
        	Billcom.create_body(conn, data)
